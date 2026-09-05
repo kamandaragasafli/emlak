@@ -263,74 +263,151 @@ export function SearchSelect({ label, value, options, onChange, open, onOpen, al
   );
 }
 
-/* ---------- header ---------- */
+/* ---------- header + mobile sidebar ---------- */
 export function Header() {
   const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
   const nav = [
-    { label: t.nav.about, to: `${pathFor(lang, "home")}#haqqimizda` },
-    { label: t.nav.catalog, to: `${pathFor(lang, "home")}#kataloq` },
-    { label: t.nav.process, to: `${pathFor(lang, "home")}#proses` },
-    { label: t.nav.reviews, to: `${pathFor(lang, "home")}#reyler` },
-    { label: t.nav.contact, to: `${pathFor(lang, "home")}#elaqe` },
+    { label: t.nav.about, to: pathFor(lang, "about"), key: "about" },
+    { label: t.nav.catalog, to: pathFor(lang, "catalog"), key: "catalog" },
+    { label: t.nav.process, to: pathFor(lang, "process"), key: "process" },
+    { label: t.nav.reviews, to: pathFor(lang, "reviews"), key: "reviews" },
+    { label: t.nav.contact, to: pathFor(lang, "contact"), key: "contact" },
   ];
 
-  const linkClass = (to) => {
-    const hash = to.includes("#") ? to.split("#")[1] : "";
-    const onHome =
-      location.pathname.replace(/\/$/, "") === pathFor(lang, "home").replace(/\/$/, "");
-    const active = onHome && hash && location.hash === `#${hash}`;
-    return `text-[14px] transition-colors ${active ? "font-semibold text-ink" : "text-muted hover:text-ink"}`;
-  };
+  const isActive = (to) => location.pathname.replace(/\/$/, "") === to.replace(/\/$/, "");
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/92 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5 md:px-8">
-        <Link to={pathFor(lang, "home")} aria-label={t.homeAria}>
-          <Brand />
-        </Link>
+    <>
+      <header className="sticky top-0 z-50 bg-white/92 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5 md:px-8">
+          <Link to={pathFor(lang, "home")} aria-label={t.homeAria}>
+            <Brand />
+          </Link>
 
-        <nav className="hidden items-center gap-8 lg:flex" aria-label="Main">
+          <nav className="hidden items-center gap-8 lg:flex" aria-label="Main">
+            {nav.map((l) => (
+              <Link
+                key={l.key}
+                to={l.to}
+                className={`text-[14px] transition-colors ${
+                  isActive(l.to) ? "font-semibold text-ink" : "text-muted hover:text-ink"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <LangSwitcher />
+            </div>
+            <button
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-surface lg:hidden"
+              onClick={() => setOpen(true)}
+              aria-label={t.menu}
+              aria-expanded={open}
+              aria-controls="mobile-sidebar"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Overlay */}
+      <div
+        className={`fixed inset-0 z-[60] bg-ink/40 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden ${
+          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        onClick={() => setOpen(false)}
+        aria-hidden={!open}
+      />
+
+      {/* Sidebar */}
+      <aside
+        id="mobile-sidebar"
+        className={`fixed inset-y-0 right-0 z-[70] flex w-[min(100%,320px)] flex-col bg-white shadow-2xl shadow-ink/20 transition-transform duration-300 ease-out lg:hidden ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+        aria-hidden={!open}
+        aria-label={t.menu}
+      >
+        <div className="flex items-center justify-between border-b border-mist px-5 py-4">
+          <Brand />
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-surface"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="flex flex-1 flex-col gap-1 px-3 py-5" aria-label="Mobile">
+          <Link
+            to={pathFor(lang, "home")}
+            onClick={() => setOpen(false)}
+            className={`rounded-xl px-4 py-3.5 text-[15px] font-medium transition-colors ${
+              isActive(pathFor(lang, "home"))
+                ? "bg-surface text-ink"
+                : "text-muted hover:bg-mist hover:text-ink"
+            }`}
+          >
+            {lang === "ru" ? "Главная" : lang === "en" ? "Home" : "Ana səhifə"}
+          </Link>
           {nav.map((l) => (
-            <Link key={l.to} to={l.to} className={linkClass(l.to)}>
+            <Link
+              key={l.key}
+              to={l.to}
+              onClick={() => setOpen(false)}
+              className={`rounded-xl px-4 py-3.5 text-[15px] font-medium transition-colors ${
+                isActive(l.to) ? "bg-surface text-ink" : "text-muted hover:bg-mist hover:text-ink"
+              }`}
+            >
               {l.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="border-t border-mist px-5 py-5">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-soft">
+            {lang === "ru" ? "Язык" : lang === "en" ? "Language" : "Dil"}
+          </p>
           <LangSwitcher />
-          <button
-            className="flex h-11 w-11 items-center justify-center text-ink lg:hidden"
-            onClick={() => setOpen((o) => !o)}
-            aria-label={t.menu}
-            aria-expanded={open}
+          <Link
+            to={pathFor(lang, "contact")}
+            onClick={() => setOpen(false)}
+            className="mt-5 flex h-12 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white"
           >
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+            {t.nav.contact}
+          </Link>
         </div>
-      </div>
-
-      <div
-        className="overflow-hidden border-t border-mist transition-all duration-300 lg:hidden"
-        style={{ maxHeight: open ? "320px" : "0px" }}
-      >
-        <div className="flex flex-col gap-1 px-5 py-4">
-          {nav.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              onClick={() => setOpen(false)}
-              className="rounded-lg px-2 py-2.5 text-sm text-muted hover:bg-surface hover:text-ink"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </header>
+      </aside>
+    </>
   );
 }
 

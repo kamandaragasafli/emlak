@@ -9,7 +9,7 @@ export default function Layout() {
   const { lang: paramLang } = useParams();
   const { lang, setLang } = useLang();
   const location = useLocation();
-  const isContact = false;
+  const isContact = location.pathname.includes("/elaqe");
 
   useEffect(() => {
     if (paramLang && LANG_CODES.includes(paramLang) && paramLang !== lang) {
@@ -18,15 +18,8 @@ export default function Layout() {
   }, [paramLang, lang, setLang]);
 
   useEffect(() => {
-    if (location.hash) {
-      const id = location.hash.slice(1);
-      requestAnimationFrame(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    } else {
-      window.scrollTo({ top: 0, behavior: "instant" });
-    }
-  }, [location.pathname, location.hash]);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [location.pathname]);
 
   if (paramLang && !LANG_CODES.includes(paramLang)) {
     return <Navigate to="/az" replace />;
